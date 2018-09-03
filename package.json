@@ -1,0 +1,14 @@
+{
+    "dependencies": {
+        "@alexmtur/one-class": "^3.2.1"
+    },
+    "name": "mindpost",
+    "version": "1.0.0",
+    "description": "",
+    "main": "my-app.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Alex <alexmartinturrillas@gmail.com>",
+    "license": "ISC"
+}

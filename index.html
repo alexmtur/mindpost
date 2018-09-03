@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
+  <title>lit-element demo</title>
+  <!-- Initialize Firebase Storage-->
+<!--   <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase-firestore.js"></script> -->
+  <!-- Firebase App is always required and must be first -->
+<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-app.js"></script>
+
+<!-- Add additional services you want to use -->
+<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-messaging.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-functions.js"></script>
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyAXxEyIhqPhdDO50-qy3q6YMuB4azrYHLw",
+      authDomain: "one-login-24376.firebaseapp.com",
+      databaseURL: "https://one-login-24376.firebaseio.com",
+      projectId: "one-login-24376",
+      storageBucket: "one-login-24376.appspot.com",
+      messagingSenderId: "1092455581800"
+    };
+    firebase.initializeApp(config);
+  // Initialize Cloud Firestore through Firebase
+  var firestore = firebase.firestore();
+  </script>
+  <!-- Init Firabase User Authentication -->
+<!--   <script src="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.js"></script>
+  <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.1.1/firebaseui.css" /> -->
+</head>
+
+<body>
+    <style>
+    body {
+         font: 100% "Lato", sans-serif;
+         font-weight: 300 !important;
+         color: #333;
+         background-color: white;
+         margin: 0 !important;
+         line-height: 1.5;
+         min-height: 100vh; 
+
+         --one-color: yellow;
+     }
+    </style>
+    
+  <script type="module">
+    // import { LitElement, html } from './node_modules/@polymer/lit-element/lit-element.js';
+    import {MyApp} from "/my-app.js"
+    // import {oneStyle} from "./node_modules/@alexmtur/one-style/one-style.js"
+  </script>
+
+  <div style="width: 100%;display: flex; align-items: center; justify-content: center; background: #f1f1f1; flex-direction: column;">
+    <my-app></my-app>
+  </div>
+</body></html>
+
+
+
