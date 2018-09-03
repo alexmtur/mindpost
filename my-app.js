@@ -21,7 +21,8 @@ export class MyApp extends OneClass {
         /username/event/eventid (in db is users/username/events/eventid)
         /public/event/eventid (public is also a username)
         */ 
-        firebase.auth().onAuthStateChanged(function(user) {
+        this.userUrl = '/alex';
+        firebase.auth().onAuthStateChanged((user)=>{
           if (user) {
             // User is signed in.
             var displayName = user.displayName;
@@ -31,9 +32,14 @@ export class MyApp extends OneClass {
             var isAnonymous = user.isAnonymous;
             var uid = user.uid;
             var providerData = user.providerData;
+            this.userUrl = '/' + this.userId;
             this.user = user;
+            this.email = user.email;
             this.username = user.displayName;
-            console.log(email);
+            this.userId = user.uid;
+            
+            console.log(this.userId);
+            history.pushState(null, null, this.userId);
             // ...
           } else {
             // User is signed out.
@@ -66,6 +72,13 @@ export class MyApp extends OneClass {
 		});
 
     }
+    signOut() {
+        firebase.auth().signOut().then(function() {
+          // Sign-out successful.
+        }, function(error) {
+          // An error happened.
+        });
+    }
      _render() {return html`
         <style>
             :host {
@@ -82,13 +95,19 @@ export class MyApp extends OneClass {
         <input on-change=${(e)=>{this.email = e.target.value}} type="email">
         <input on-change=${(e)=>{this.password = e.target.value}} type="password">
         <button on-click=${(e)=>{this.createUser()}}>Create user</button>
-        <user-home username=${this.email} activeUrl=${'/'+this.email}></user-home> //sorry your usser does not exist in the plaform
-        html`
-		  ${user.isloggedIn
-		      ? html`Welcome ${user.name}`
-		      : html`Please log in`
-		  }
-		`;
+        <button on-click=${(e)=>{this.googleSignIn()}}>Google Login</button>
+        <p>${this.email}</p>
+         //sorry your usser does not exist in the plaform
+		  ${this.user
+              ? html`Welcome ${this.email} <user-home 
+              username=${this.email} 
+              activeUrl=${this.userUrl}
+              onlinePath=${'users/'+this.userId}
+              ></user-home>`
+              : html`Please log in`
+          }
+          Please show the email:
+          ${this.user}
 
         `;
     }
@@ -104,19 +123,22 @@ export class UserHome extends OneClass {
     }
     constructor() {//properties do not take value until first rendered, unless we define them in the constructor
         super();  
+        this.events = [];
+        this.tabs = [];
     }
      _render() {return html`
         <h2>
             Welcome ${this.user}
         </h2>
+        <button on-click=${(e)=>{this.googleSignIn()}}>New Event</button>
         <div> Modal. The tab number depends on the selected event
         repeat user inputs 
         	<modal tabNumber=selectedEvent.tabNumbeR>
         		<ul>
-				    ${userEvents.map((i) => html`<li>${i}</li>`)}
+				    ${this.events.map((i) => html`<li>${i}</li>`)}
 				  </ul>
 				  <tabs> //otra opcion en vez de tabs es poner el evento completo y dentro del propio evento gestionar el save y todas las tabs.
-				  ${tabs.map((i) => html`<tab>
+				  ${this.tabs.map((i) => html`<tab>
 				  	${i.tabType}
 				  	</tab>`)}
 				  </tabs>
@@ -151,7 +173,7 @@ export class BirthdayEvent extends OneClass {
         `;
     }
 }
-customElements.define('birthday-event', UserHome);
+customElements.define('birthday-event', BirthdayEvent);
 
 export class TimeInput extends OneClass {
     static get properties() {return {
@@ -160,7 +182,7 @@ export class TimeInput extends OneClass {
         };
     }
     constructor() {//properties do not take value until first rendered, unless we define them in the constructor
-        super();  
+        super();  //maybe we can start by a single event or three like event, birthday, alarm. or public event, private event
     }
      _render() {return html`
         <h2>
