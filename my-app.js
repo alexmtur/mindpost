@@ -1,5 +1,6 @@
 import {OneClass, html} from '@alexmtur/one-class'
 // import {OneIcon} from '@alexmtur/one-icon/one-icon.js'
+//https://polymer.github.io/lit-html/guide/writing-templates.html#conditionals-ifs-and-loops
 
 export class MyApp extends OneClass {
     static get properties() {return {
@@ -51,6 +52,20 @@ export class MyApp extends OneClass {
         });
 
     }
+    googleSignIn() {
+    	let provider = new firebase.auth.GoogleAuthProvider();
+    	//provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+    	provider.addScope('https://www.googleapis.com/auth/calendar'); //manage calendars
+    	firebase.auth().signInWithPopup(provider).then(function(result) {
+		  // This gives you a Google Access Token. You can use it to access the Google API.
+		  var token = result.credential.accessToken;
+		  // The signed-in user info.
+		  var user = result.user;
+		  console.log(user);
+		  // ...
+		});
+
+    }
      _render() {return html`
         <style>
             :host {
@@ -67,8 +82,13 @@ export class MyApp extends OneClass {
         <input on-change=${(e)=>{this.email = e.target.value}} type="email">
         <input on-change=${(e)=>{this.password = e.target.value}} type="password">
         <button on-click=${(e)=>{this.createUser()}}>Create user</button>
-        <user-home username=${this.email} activeUrl=${'/'+this.email}></user-home>
-
+        <user-home username=${this.email} activeUrl=${'/'+this.email}></user-home> //sorry your usser does not exist in the plaform
+        html`
+		  ${user.isloggedIn
+		      ? html`Welcome ${user.name}`
+		      : html`Please log in`
+		  }
+		`;
 
         `;
     }
@@ -89,7 +109,67 @@ export class UserHome extends OneClass {
         <h2>
             Welcome ${this.user}
         </h2>
+        <div> Modal. The tab number depends on the selected event
+        repeat user inputs 
+        	<modal tabNumber=selectedEvent.tabNumbeR>
+        		<ul>
+				    ${userEvents.map((i) => html`<li>${i}</li>`)}
+				  </ul>
+				  <tabs> //otra opcion en vez de tabs es poner el evento completo y dentro del propio evento gestionar el save y todas las tabs.
+				  ${tabs.map((i) => html`<tab>
+				  	${i.tabType}
+				  	</tab>`)}
+				  </tabs>
+        		for events
+        	</modal>
+        </div>
         `;
     }
 }
 customElements.define('user-home', UserHome);
+
+export class BirthdayEvent extends OneClass {
+    static get properties() {return {
+        color: String,
+        icon: String,
+        tabNumber: String,
+        tab1: String, //time input, maybe put them in tabs array and extract number and tabs
+        tab2: String, //day input
+        tab3: String,
+
+        };
+    }
+    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
+        super();  
+    }
+     _render() {return html`
+        <h2>
+            Welcome ${this.user}
+        </h2>
+        <div> Modal
+        </div>
+        `;
+    }
+}
+customElements.define('birthday-event', UserHome);
+
+export class TimeInput extends OneClass {
+    static get properties() {return {
+        username: String,
+        password: String
+        };
+    }
+    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
+        super();  
+    }
+     _render() {return html`
+        <h2>
+            Welcome ${this.user}
+        </h2>
+        <div> //resize to take the space of the modal
+        	<input type="time">
+        </div>
+        `;
+    }
+}
+customElements.define('time-input', TimeInput);
