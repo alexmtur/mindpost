@@ -40,11 +40,41 @@ export class MyApp extends OneClass {
             
             console.log(this.userId);
             history.pushState(null, null, this.userId);
+            firestore.collection("users").doc(this.userId).get().then((doc)=>{
+			    if (doc.exists) {
+			        console.log("Document data:", doc.data());
+			    } else {
+			        // doc.data() will be undefined in this case
+			        console.log("No such document!");
+			        firestore.collection("users").doc(this.userId).set({
+					    name: displayName,
+					    email: email,
+					    events: []
+					})
+					.then(function() {
+					    console.log("Document successfully written!");
+					})
+					.catch(function(error) {
+					    console.error("Error writing document: ", error);
+					});
+			    }
+			}).catch((error)=>{
+			    console.log("Error getting document:", error);
+			});
             // ...
           } else {
             // User is signed out.
             // ...
           }
+
+          firestore.collection("events").where("us", "==", "CA")
+		    .onSnapshot(function(querySnapshot) {
+		        var cities = [];
+		        querySnapshot.forEach(function(doc) {
+		            cities.push(doc.data().name);
+		        });
+		        console.log("Current cities in CA: ", cities.join(", "));
+		    });
         });
     }
     createUser() {
@@ -67,7 +97,7 @@ export class MyApp extends OneClass {
 		  var token = result.credential.accessToken;
 		  // The signed-in user info.
 		  var user = result.user;
-		  console.log(user);
+		  console.log(result);
 		  // ...
 		});
 
@@ -96,6 +126,7 @@ export class MyApp extends OneClass {
         <input on-change=${(e)=>{this.password = e.target.value}} type="password">
         <button on-click=${(e)=>{this.createUser()}}>Create user</button>
         <button on-click=${(e)=>{this.googleSignIn()}}>Google Login</button>
+        <button on-click=${(e)=>{this.signOut()}}>Logout</button>
         <p>${this.email}</p>
          //sorry your usser does not exist in the plaform
 		  ${this.user
@@ -133,6 +164,7 @@ export class UserHome extends OneClass {
         <button on-click=${(e)=>{this.googleSignIn()}}>New Event</button>
         <div> Modal. The tab number depends on the selected event
         repeat user inputs 
+        	<event-tag></event-tag>
         	<modal tabNumber=selectedEvent.tabNumbeR>
         		<ul>
 				    ${this.events.map((i) => html`<li>${i}</li>`)}
@@ -149,6 +181,61 @@ export class UserHome extends OneClass {
     }
 }
 customElements.define('user-home', UserHome);
+
+export class EventTag extends OneClass {
+    static get properties() {return {
+        color: String,
+        icon: String,
+        date: {type: Object, public: true},
+        time: {type: Object, public: true},
+        userId: {type: String, public: true},
+        eventId: String,
+        };
+    }
+    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
+        super();  
+        this.date = '2018-11-24';
+    }
+    saveEvent() {
+    	//this.userId = firebase.auth().currentUser.uid;
+    	//this.updateStorage();
+
+    	// Add a new document with a generated id.
+		let eventDoc = firestore.collection("events").doc();
+		//update customer with new event, push id;
+		console.log(eventId);
+		let userId = firebase.auth().currentUser;
+
+		firestore.collection("users").doc(userId).get().then((doc)=> {
+		    if (doc.exists) {
+		    	console.log(doc)		        
+		  //       this.eventList.push(eventId);
+				// firestore.collection("users").doc(userId).update({events: this.eventList});
+		    } else {console.log("No such document!");}
+		}).catch(function(error) {
+		    console.log("Error getting document:", error);
+		});
+
+		// later...
+		eventDoc.set({date: this.date, time: this.time, userId: userId});
+		
+
+    }
+     _render() {return html`
+        <h3>
+            Event Input
+        </h3>
+        <input type="date" value=${this.date} on-change=${(e)=>{this.date = e.target.value; console.log(this.date)}}>
+        <input type="time" value=${this.time} on-change=${(e)=>{this.time = e.target.value; console.log(this.time)}}>
+
+        <button on-click=${(e)=>{this.saveEvent()}}>New Event</button>
+
+        <div> DAte: ${this.date}
+        </div>
+        `;
+    }
+}
+customElements.define('event-tag', EventTag);
 
 export class BirthdayEvent extends OneClass {
     static get properties() {return {
