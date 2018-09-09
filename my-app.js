@@ -2,97 +2,54 @@ import {OneClass, html} from '@alexmtur/one-class'
 // import {OneIcon} from '@alexmtur/one-icon/one-icon.js'
 //https://polymer.github.io/lit-html/guide/writing-templates.html#conditionals-ifs-and-loops
 
+/* Think about the url structure for the app 
+/home
+/public
+/settings
+/events/eventId: show the profile of the event in the modal
+/users/userId: show the public profile of the user in modal
+/other: yield error
+*/ 
+
 export class MyApp extends OneClass {
     static get properties() {return {
         user: Object,
         email: String,
-        password: String
+        password: String,
+        events: Array,
         };
     }
-    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
+    constructor() {
         super();  
-        /* Think about the url structure for the app 
-        /home
-        /username: my users home (in datablase is users/username)
-            *should settings just be a modal?
-        /username/public: go to public screen
-        /usernmae/settings: go to 
-        /username/newEvent
-        /username/event/eventid (in db is users/username/events/eventid)
-        /public/event/eventid (public is also a username)
-        */ 
-        this.userUrl = '/alex';
-        firebase.auth().onAuthStateChanged((user)=>{
-          if (user) {
-            // User is signed in.
-            var displayName = user.displayName;
-            var email = user.email;
-            var emailVerified = user.emailVerified;
-            var photoURL = user.photoURL;
-            var isAnonymous = user.isAnonymous;
-            var uid = user.uid;
-            var providerData = user.providerData;
-            this.userUrl = '/' + this.userId;
+        firebase.auth().onAuthStateChanged((user) => {
+            if(user) {
             this.user = user;
             this.email = user.email;
             this.username = user.displayName;
             this.userId = user.uid;
+            let userPath = 'users/' + this.userId;
             
-            console.log(this.userId);
-            history.pushState(null, null, this.userId);
-            firestore.collection("users").doc(this.userId).get().then((doc)=>{
-			    if (doc.exists) {
-			        console.log("Document data:", doc.data());
-			    } else {
-			        // doc.data() will be undefined in this case
-			        console.log("No such document!");
-			        firestore.collection("users").doc(this.userId).set({
-					    name: displayName,
-					    email: email,
-					    events: []
-					})
-					.then(function() {
-					    console.log("Document successfully written!");
-					})
-					.catch(function(error) {
-					    console.error("Error writing document: ", error);
-					});
-			    }
-			}).catch((error)=>{
-			    console.log("Error getting document:", error);
-			});
-            // ...
-          } else {
-            // User is signed out.
-            // ...
+            this.getOnline(userPath).then((doc) => {
+                if(doc) {
+                    this.syncFieldOnline(userPath, 'events');
+                }
+                else {
+                    let userData = {
+                        name: displayName,
+                        email: email,
+                        events: []
+                    };
+                    this.setOnline(userPath, userData);
+                }
+            });
           }
-
-          firestore.collection("events").where("us", "==", "CA")
-		    .onSnapshot(function(querySnapshot) {
-		        var cities = [];
-		        querySnapshot.forEach(function(doc) {
-		            cities.push(doc.data().name);
-		        });
-		        console.log("Current cities in CA: ", cities.join(", "));
-		    });
         });
-    }
-    createUser() {
-        console.log(this.email);
-        firebase.auth().createUserWithEmailAndPassword(this.email, this.password).catch(function(error) {
-          // Handle Errors here.
-          var errorCode = error.code;
-          var errorMessage = error.message;
-          console.log(error);
-          // ...
-        });
-
     }
     googleSignIn() {
     	let provider = new firebase.auth.GoogleAuthProvider();
     	//provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
     	provider.addScope('https://www.googleapis.com/auth/calendar'); //manage calendars
-    	firebase.auth().signInWithPopup(provider).then(function(result) {
+    	firebase.auth().signInWithPopup(provider).then((result) => {
 		  // This gives you a Google Access Token. You can use it to access the Google API.
 		  var token = result.credential.accessToken;
 		  // The signed-in user info.
@@ -102,13 +59,7 @@ export class MyApp extends OneClass {
 		});
 
     }
-    signOut() {
-        firebase.auth().signOut().then(function() {
-          // Sign-out successful.
-        }, function(error) {
-          // An error happened.
-        });
-    }
+    
      _render() {return html`
         <style>
             :host {
@@ -122,23 +73,20 @@ export class MyApp extends OneClass {
         <h1>
             Welcome to Mindpost!
         </h1>
-        <input on-change=${(e)=>{this.email = e.target.value}} type="email">
-        <input on-change=${(e)=>{this.password = e.target.value}} type="password">
-        <button on-click=${(e)=>{this.createUser()}}>Create user</button>
-        <button on-click=${(e)=>{this.googleSignIn()}}>Google Login</button>
+        
         <button on-click=${(e)=>{this.signOut()}}>Logout</button>
-        <p>${this.email}</p>
-         //sorry your usser does not exist in the plaform
 		  ${this.user
-              ? html`Welcome ${this.email} <user-home 
+              ? html`Welcome ${this.email} 
+              <user-home 
+              user=${this.user}
+              events=${this.events}
               username=${this.email} 
               activeUrl=${this.userUrl}
               onlinePath=${'users/'+this.userId}
               ></user-home>`
-              : html`Please log in`
+              : html`<button on-click=${(e)=>{this.googleSignIn()}}>Google Login</button>`
           }
-          Please show the email:
-          ${this.user}
+          <one-modal>My content</one-modal>
 
         `;
     }
@@ -149,13 +97,20 @@ customElements.define('my-app', MyApp);
 export class UserHome extends OneClass {
     static get properties() {return {
         username: String,
-        password: String
+        password: String,
+        user: Object,
+        events: Array,
         };
     }
     constructor() {//properties do not take value until first rendered, unless we define them in the constructor
         super();  
         this.events = [];
         this.tabs = [];
+
+        // firestore.collection("users").doc(this.user.uid)
+        //     .onSnapshot((doc) => {
+        //         console.log(doc.data());
+        //     });
     }
      _render() {return html`
         <h2>
@@ -164,11 +119,12 @@ export class UserHome extends OneClass {
         <button on-click=${(e)=>{this.googleSignIn()}}>New Event</button>
         <div> Modal. The tab number depends on the selected event
         repeat user inputs 
+        <ul>
+        ${this.events.map((i) => html`<li><event-display eventId=${i}></event-display></li>`)}
+      </ul>
         	<event-tag></event-tag>
         	<modal tabNumber=selectedEvent.tabNumbeR>
-        		<ul>
-				    ${this.events.map((i) => html`<li>${i}</li>`)}
-				  </ul>
+        		
 				  <tabs> //otra opcion en vez de tabs es poner el evento completo y dentro del propio evento gestionar el save y todas las tabs.
 				  ${this.tabs.map((i) => html`<tab>
 				  	${i.tabType}
@@ -177,10 +133,74 @@ export class UserHome extends OneClass {
         		for events
         	</modal>
         </div>
+        <event-page activeUrl="/events" dataIndex="2"></event-page>
         `;
     }
 }
 customElements.define('user-home', UserHome);
+
+export class EventDisplay extends OneClass {
+    static get properties() {return {
+        eventId: String,
+        date: Object,
+        time: Object,
+        };
+    }
+    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
+        super();  //maybe we can start by a single event or three like event, birthday, alarm. or public event, private event
+    }
+    // connectedCallback() {
+    //     //super();
+    //     console.log(this.eventId);
+    // }
+    _propertiesChanged(props, changedProps, prevProps) {
+        //required for re-render
+        super._propertiesChanged(props, changedProps, prevProps);
+        //console.log(props);
+        if(this.eventId) {
+            firestore.collection("events").doc(this.eventId)
+            .onSnapshot((doc) => {
+                this.date = doc.data().date;
+                this.time = doc.data().time;
+            });
+        }
+    }
+     _render() {return html`
+        <div>
+            Event date: ${this.eventId} and ${this.date} and time: ${this.time}
+        </div>
+        `;
+    }
+}
+customElements.define('event-display', EventDisplay);
+
+export class EventPage extends OneClass {
+    static get properties() {return {
+        username: String,
+        password: String
+        };
+    }
+    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
+        super();  //maybe we can start by a single event or three like event, birthday, alarm. or public event, private event
+    }
+    _propertiesChanged(props, changedProps, prevProps) {
+        super._propertiesChanged(props, changedProps, prevProps);
+        if(this.visible && this.urlData) {
+            // firestore.collection("events").doc(this.eventId)
+            // .onSnapshot((doc) => {
+            //     this.date = doc.data().date;
+            //     this.time = doc.data().time;
+            // });
+        }
+    }
+     _render() {return html`
+        <h2>
+            The event page is active and this is the event: ${this.urlData}
+        </h2>
+        `;
+    }
+}
+customElements.define('event-page', EventPage);
 
 export class EventTag extends OneClass {
     static get properties() {return {
@@ -202,15 +222,16 @@ export class EventTag extends OneClass {
 
     	// Add a new document with a generated id.
 		let eventDoc = firestore.collection("events").doc();
-		//update customer with new event, push id;
-		console.log(eventId);
-		let userId = firebase.auth().currentUser;
+        let eventId = eventDoc.id;		//update customer with new event, push id;
+		//console.log(eventId);
+		let userId = firebase.auth().currentUser.uid;
 
 		firestore.collection("users").doc(userId).get().then((doc)=> {
 		    if (doc.exists) {
-		    	console.log(doc)		        
-		  //       this.eventList.push(eventId);
-				// firestore.collection("users").doc(userId).update({events: this.eventList});
+		    	//console.log(doc)
+                let events = doc.data().events;	
+                events.push(eventId);	
+				firestore.collection("users").doc(userId).update({events: events});
 		    } else {console.log("No such document!");}
 		}).catch(function(error) {
 		    console.log("Error getting document:", error);
@@ -237,48 +258,162 @@ export class EventTag extends OneClass {
 }
 customElements.define('event-tag', EventTag);
 
-export class BirthdayEvent extends OneClass {
-    static get properties() {return {
-        color: String,
-        icon: String,
-        tabNumber: String,
-        tab1: String, //time input, maybe put them in tabs array and extract number and tabs
-        tab2: String, //day input
-        tab3: String,
 
-        };
+export class OneModal extends OneClass {
+    static get properties() {return {
+        // use the standard visible to bind to open/close modal
+        // icon: {type: String},
+        visible: {type: Boolean, public: true},
+        noFooter: Boolean,
+        noHeader: Boolean,
+        noBackdrop: Boolean,
+        noCloseIcon: Boolean,
+        // title: {type: String},
+        //size: String,
+    }}
+    constructor() {
+        super();
+        //this.size = 'm';
+        this.visible = false;
+        this.entryAnimation = 'fade-in';
+        this.exitAnimation = 'fade-out';
     }
-    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
-        super();  
-    }
-     _render() {return html`
-        <h2>
-            Welcome ${this.user}
-        </h2>
-        <div> Modal
-        </div>
-        `;
+    _render() {return html`
+        <style>
+            :host {
+                display: flex;
+                /*position: absolute;*/
+                top: 0;
+                left: 0;
+                z-index: 100;
+            }
+            #content {
+                display: block;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+                background-color: var(--one-background, rgba(255, 255, 255, .95));
+                border-radius: var(--one-border-radius, 3px);
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+                z-index: 1000;
+                width: var(--one-width, 95vw);
+                height: var(--one-height, 95vh);
+                max-width: var(--one-max-width);
+                max-height: var(--one-max-height);
+                display: flex;
+                justify-content: center;
+                align-items: space-between;
+                flex-direction: column;
+                /*padding: 10px;*/
+            }
+            #body {
+                flex: 1;
+            }
+            #header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 1px solid #f1f1f1;
+                /*background: pink;*/
+            }
+            #header[hidden], #footer[hidden], #backdrop[hidden], #close[hidden] {
+                display: none;
+            }
+            #header-text {
+                padding: 15px 0 15px 0;
+                text-align: center;
+                flex:1;
+                /*padding-left:40px;*/
+                font-size: 120%;
+                color: #999;
+            }
+            /*#header-icon {
+                width: 30px;
+                height: auto;
+                padding-right: 20px;
+            }*/
+            #footer {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-top: 1px solid #f1f1f1;
+                /*background: pink;*/
+            }
+
+            #close {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 20px;
+                height: auto;
+                padding: 10px;
+                /*color: lightgray;*/
+                cursor: pointer;
+                fill: var(--one-icon-fill, #333);
+                /*align-self: flex-start;*/
+                /*padding: 10px;*/
+                /*fill:url(#red-gradient);*/
+            }
+            #close:hover {
+                opacity: 0.5;
+            }
+            #backdrop {
+                display: block;
+                z-index: 0;
+                position: fixed;
+                top:0;
+                left: 0;
+                height: 100vh;
+                width: 100vw;
+                background: rgba(0,0,0,0.5);
+            }
+            #text {
+                font-size: 80%;
+            }
+/*
+            iron-icon {
+                display: flex;
+                width: var(--one-icon-size, 30px);
+                height: auto;
+                margin: 0;
+                border: solid 2px white;
+                border-radius: 30px;
+                padding: 5px;
+                color: pink;
+            }
+            iron-icon[hidden] {
+                display: none;
+            }*/
+
+        </style>
+
+
+        <!--<div id="content" closed$="[[!open]]" size$="[[size]]">-->
+        <div id="backdrop" on-click=${(e) => this.hide(e)} hidden$=${this.noBackdrop} entry-animation="fade-in" exit-animation="fade-out"></div>
+        <div id="content" entry-animation="horizontal-expand" entry-animation="horizontal-shrink">
+
+            <one-icon icon="close" id="close" on-click="${(e) => this.hide(e)}" hidden$="${this.noCloseIcon}"></one-icon>
+
+            <div id="header" hidden$=${this.noHeader}>
+                <div id="header-text">
+                    <slot name="header">
+                
+                    </slot>
+                </div> 
+            </div>
+            <div id="body">
+                <slot>
+
+                </slot>
+            </div>
+            <div id="footer" hidden$=${this.noFooter}>
+                <slot name="footer">
+
+                </slot>
+            </div>
+        </div>`;
     }
 }
-customElements.define('birthday-event', BirthdayEvent);
-
-export class TimeInput extends OneClass {
-    static get properties() {return {
-        username: String,
-        password: String
-        };
-    }
-    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
-        super();  //maybe we can start by a single event or three like event, birthday, alarm. or public event, private event
-    }
-     _render() {return html`
-        <h2>
-            Welcome ${this.user}
-        </h2>
-        <div> //resize to take the space of the modal
-        	<input type="time">
-        </div>
-        `;
-    }
-}
-customElements.define('time-input', TimeInput);
+customElements.define('one-modal', OneModal);
