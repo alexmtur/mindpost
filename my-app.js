@@ -64,6 +64,7 @@ export class MyApp extends OneClass {
         <style>
             :host {
                 display: block;
+                background: transparent;
                 /*position: absolute;*/
                 top: 0;
                 left: 0;
@@ -80,11 +81,12 @@ export class MyApp extends OneClass {
               <user-home 
               user=${this.user}
               events=${this.events}
-              username=${this.email} 
-              activeUrl=${this.userUrl}
               onlinePath=${'users/'+this.userId}
               ></user-home>`
-              : html`<button on-click=${(e)=>{this.googleSignIn()}}>Google Login</button>`
+              : html`
+
+              <button on-click=${(e)=>{this.googleSignIn()}}>Google Login</button>
+              `
           }
           <one-modal>My content</one-modal>
 
@@ -96,8 +98,6 @@ customElements.define('my-app', MyApp);
 
 export class UserHome extends OneClass {
     static get properties() {return {
-        username: String,
-        password: String,
         user: Object,
         events: Array,
         };
@@ -106,21 +106,19 @@ export class UserHome extends OneClass {
         super();  
         this.events = [];
         this.tabs = [];
-
-        // firestore.collection("users").doc(this.user.uid)
-        //     .onSnapshot((doc) => {
-        //         console.log(doc.data());
-        //     });
     }
      _render() {return html`
         <h2>
             Welcome ${this.user}
         </h2>
-        <button on-click=${(e)=>{this.googleSignIn()}}>New Event</button>
+        <button on-click=${(e)=>{this.id('newEvent').show()}}>New Event</button>
+        <one-modal id="newEvent">
+        My fancy content
+        </one-modal>
         <div> Modal. The tab number depends on the selected event
         repeat user inputs 
         <ul>
-        ${this.events.map((i) => html`<li><event-display eventId=${i}></event-display></li>`)}
+        ${this.events.map((i) => html`<li><event-card eventId=${i}></event-card></li>`)}
       </ul>
         	<event-tag></event-tag>
         	<modal tabNumber=selectedEvent.tabNumbeR>
@@ -139,7 +137,7 @@ export class UserHome extends OneClass {
 }
 customElements.define('user-home', UserHome);
 
-export class EventDisplay extends OneClass {
+export class EventCard extends OneClass {
     static get properties() {return {
         eventId: String,
         date: Object,
@@ -172,7 +170,7 @@ export class EventDisplay extends OneClass {
         `;
     }
 }
-customElements.define('event-display', EventDisplay);
+customElements.define('event-card', EventCard);
 
 export class EventPage extends OneClass {
     static get properties() {return {
