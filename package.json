@@ -1,6 +1,8 @@
 {
     "dependencies": {
         "@alexmtur/one-class": "^3.2.4",
+        "@alexmtur/one-icon": "latest",
+        "@alexmtur/one-slide-box": "^3.0.2",
         "npm": "^6.4.1"
     },
     "name": "mindpost",

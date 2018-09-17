@@ -1,5 +1,6 @@
 import {OneClass, html} from '@alexmtur/one-class'
-// import {OneIcon} from '@alexmtur/one-icon/one-icon.js'
+import {OneIcon} from '@alexmtur/one-icon'
+import {OneSlideBox} from '@alexmtur/one-slide-box'
 //https://polymer.github.io/lit-html/guide/writing-templates.html#conditionals-ifs-and-loops
 
 /* Think about the url structure for the app 
@@ -42,7 +43,7 @@ export class MyApp extends OneClass {
                     this.setOnline(userPath, userData);
                 }
             });
-          }
+          } else this.user = undefined;
         });
     }
     googleSignIn() {
@@ -83,7 +84,7 @@ export class MyApp extends OneClass {
               events=${this.events}
               onlinePath=${'users/'+this.userId}
               ></user-home>`
-              : html`
+              : html`<landing-home></landing-home>
 
               <button on-click=${(e)=>{this.googleSignIn()}}>Google Login</button>
               `
@@ -96,16 +97,53 @@ export class MyApp extends OneClass {
 }
 customElements.define('my-app', MyApp);
 
+export class LandingHome extends OneClass {
+    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
+        super();  //maybe we can start by a single event or three like event, birthday, alarm. or public event, private event
+    }
+     _render() {return html`
+        <div>
+            <one-icon icon="mindpost"></one-icon>
+            <one-slide-box arrows bullets endlessTransition style="margin: 50px 0 50px 0; border: 1px solid black"><img src="https://via.placeholder.com/350x350/ff0000/00ffff"><img src="https://via.placeholder.com/150x350/00ff00/ff00ff"><img src="https://via.placeholder.com/350x150/0000ff/ffff00"></one-slide-box>
+        </div>
+        `;
+    }
+}
+customElements.define('landing-home', LandingHome);
+
 export class UserHome extends OneClass {
     static get properties() {return {
         user: Object,
         events: Array,
+        selectedTag: String,
+        selectedTagHtml: Object
         };
     }
     constructor() {//properties do not take value until first rendered, unless we define them in the constructor
         super();  
         this.events = [];
         this.tabs = [];
+        this.selectedTagHtml = html`<event-tag></event-tag>`;
+    }
+    selectTag(tag) {
+        console.log('eh')
+        this.selectTag = tag;
+
+    }
+    _firstRendered() {
+        super._firstRendered();
+        this.selectedTagHtml = html`<event-tag></event-tag>`;
+    }
+    _propertiesChanged(props, changedProps, prevProps) {
+        super._propertiesChanged(props, changedProps, prevProps);
+        if(changedProps['selectTag'] !== undefined) {
+            if(changedProps['selectTag'] === 'event') {
+                console.log('ah');
+                this.selectedTagHtml = html`<event-tag></event-tag>`;
+                this.id('newEvent').hide();
+                this.id('dataInput').show();
+            }
+        }
     }
      _render() {return html`
         <h2>
@@ -113,23 +151,18 @@ export class UserHome extends OneClass {
         </h2>
         <button on-click=${(e)=>{this.id('newEvent').show()}}>New Event</button>
         <one-modal id="newEvent">
-        My fancy content
+            <div id="tagSelector">
+                <button on-click=${(e)=>{this.selectTag('event')}}>Event Tag</button>
+            </div>
+            <div id="dataInput" visible="false">
+                ${this.selectedTagHtml}
+            </div>
         </one-modal>
-        <div> Modal. The tab number depends on the selected event
-        repeat user inputs 
+        <div> 
         <ul>
         ${this.events.map((i) => html`<li><event-card eventId=${i}></event-card></li>`)}
       </ul>
-        	<event-tag></event-tag>
-        	<modal tabNumber=selectedEvent.tabNumbeR>
-        		
-				  <tabs> //otra opcion en vez de tabs es poner el evento completo y dentro del propio evento gestionar el save y todas las tabs.
-				  ${this.tabs.map((i) => html`<tab>
-				  	${i.tabType}
-				  	</tab>`)}
-				  </tabs>
-        		for events
-        	</modal>
+        	
         </div>
         <event-page activeUrl="/events" dataIndex="2"></event-page>
         `;
@@ -144,13 +177,9 @@ export class EventCard extends OneClass {
         time: Object,
         };
     }
-    constructor() {//properties do not take value until first rendered, unless we define them in the constructor
-        super();  //maybe we can start by a single event or three like event, birthday, alarm. or public event, private event
+    constructor() {
+        super();
     }
-    // connectedCallback() {
-    //     //super();
-    //     console.log(this.eventId);
-    // }
     _propertiesChanged(props, changedProps, prevProps) {
         //required for re-render
         super._propertiesChanged(props, changedProps, prevProps);
@@ -244,10 +273,11 @@ export class EventTag extends OneClass {
         <h3>
             Event Input
         </h3>
-        <input type="date" value=${this.date} on-change=${(e)=>{this.date = e.target.value; console.log(this.date)}}>
-        <input type="time" value=${this.time} on-change=${(e)=>{this.time = e.target.value; console.log(this.time)}}>
+        <one-slide-box arrows bullets endlessTransition style="margin: 50px 0 50px 0; border: 1px solid black"><input type="date" value=${this.date} on-change=${(e)=>{this.date = e.target.value; console.log(this.date)}}><input type="time" value=${this.time} on-change=${(e)=>{this.time = e.target.value; console.log(this.time)}}><button on-click=${(e)=>{this.saveEvent()}}>New Event</button></one-slide-box>
+        
+        
 
-        <button on-click=${(e)=>{this.saveEvent()}}>New Event</button>
+        
 
         <div> DAte: ${this.date}
         </div>
