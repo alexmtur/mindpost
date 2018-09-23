@@ -124,11 +124,7 @@ export class UserHome extends OneClass {
         this.events = [];
         this.tabs = [];
         this.selectedTagHtml = html`<event-tag></event-tag>`;
-    }
-    selectTag(tag) {
-        console.log('eh')
-        this.selectTag = tag;
-
+        this.var = false;
     }
     _firstRendered() {
         super._firstRendered();
@@ -136,13 +132,23 @@ export class UserHome extends OneClass {
     }
     _propertiesChanged(props, changedProps, prevProps) {
         super._propertiesChanged(props, changedProps, prevProps);
-        if(changedProps['selectTag'] !== undefined) {
-            if(changedProps['selectTag'] === 'event') {
+        if(changedProps['selectedTag'] !== undefined) {
+            if(changedProps['selectedTag'] === 'event') {
                 console.log('ah');
-                this.selectedTagHtml = html`<event-tag></event-tag>`;
-                this.id('newEvent').hide();
+                this.selectedTagHtml = html`<event-tag id="eventTag"></event-tag>`;
+                this.id('tagSelector').hide();
                 this.id('dataInput').show();
             }
+        }
+    }
+    nextStep() {
+        if(this.selectedTag) {
+            this.id('eventTag').next();
+            //if last, then save event
+
+        } else {
+           this.selectedTag='event';
+
         }
     }
      _render() {return html`
@@ -151,12 +157,14 @@ export class UserHome extends OneClass {
         </h2>
         <button on-click=${(e)=>{this.id('newEvent').show()}}>New Event</button>
         <one-modal id="newEvent">
-            <div id="tagSelector">
-                <button on-click=${(e)=>{this.selectTag('event')}}>Event Tag</button>
-            </div>
-            <div id="dataInput" visible="false">
+            <one-block id="tagSelector" style="position:relative" visible="false">
+                <button on-click=${(e)=>{this.selectedTag='event'}}>Event Tag</button>
+            </one-block>         
+            <one-block id="dataInput" style="margin-top:60px;position:absolute" visible=${this.var}>                
                 ${this.selectedTagHtml}
-            </div>
+            </one-block>
+            <button id="next" on-click=${(e)=>{this.nextStep()}}>Next</button>
+
         </one-modal>
         <div> 
         <ul>
@@ -269,22 +277,31 @@ export class EventTag extends OneClass {
 		
 
     }
+    next() {
+        this.id('steps').next();
+    }
      _render() {return html`
         <h3>
             Event Input
         </h3>
-        <one-slide-box arrows bullets endlessTransition style="margin: 50px 0 50px 0; border: 1px solid black"><input type="date" value=${this.date} on-change=${(e)=>{this.date = e.target.value; console.log(this.date)}}><input type="time" value=${this.time} on-change=${(e)=>{this.time = e.target.value; console.log(this.time)}}><button on-click=${(e)=>{this.saveEvent()}}>New Event</button></one-slide-box>
-        
-        
-
-        
-
+        <one-slide-box arrows bullets endlessTransition style="margin: 50px 0 50px 0; border: 1px solid black" id="steps"><input type="date" value=${this.date} on-change=${(e)=>{this.date = e.target.value; console.log(this.date)}}><input type="time" value=${this.time} on-change=${(e)=>{this.time = e.target.value; console.log(this.time)}}><button on-click=${(e)=>{this.saveEvent()}}>New Event</button></one-slide-box>
         <div> DAte: ${this.date}
         </div>
         `;
     }
 }
 customElements.define('event-tag', EventTag);
+
+export class OneBlock extends OneClass {
+    static get properties() {return {
+        visible: {type: Boolean, public: true},    
+    }}
+    constructor() {
+        super();  
+    }
+     _render() {return html`<style>:host(){}</style><div>Casa de baba<slot></slot></div>`;}
+}
+customElements.define('one-block', OneBlock);
 
 
 export class OneModal extends OneClass {
