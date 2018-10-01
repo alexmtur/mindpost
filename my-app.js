@@ -77,6 +77,12 @@ export class MyApp extends OneClass {
         </h1>
         
         <button on-click=${(e)=>{this.signOut()}}>Logout</button>
+         <!--Custom element-->
+        <one-navbar>
+            <one-navbar-item icon="icons:settings" url="/settings">settings</one-navbar-item>
+            <one-navbar-item icon="icons:mindpost" url="/home">mindpost</one-navbar-item>
+            <one-navbar-item icon="icons:public" url="/social">social</one-navbar-item>
+        </one-navbar>
 		  ${this.user
               ? html`Welcome ${this.email} 
               <user-home 
@@ -157,7 +163,7 @@ export class UserHome extends OneClass {
         </h2>
         <button on-click=${(e)=>{this.id('newEvent').show()}}>New Event</button>
         <one-modal id="newEvent">
-            <one-block id="tagSelector" style="position:relative" visible="false">
+            <one-block id="tagSelector" style="position:relative;" visible="false">
                 <button on-click=${(e)=>{this.selectedTag='event'}}>Event Tag</button>
             </one-block>         
             <one-block id="dataInput" style="margin-top:60px;position:absolute" visible=${this.var}>                

@@ -1,8 +1,10 @@
 {
     "dependencies": {
-        "@alexmtur/one-class": "^3.2.4",
+        "@alexmtur/one-class": "latest",
         "@alexmtur/one-icon": "latest",
-        "@alexmtur/one-slide-box": "^3.0.2",
+        "@alexmtur/one-clock-input": "latest",
+        "@alexmtur/one-calendar-input": "latest",
+        "@alexmtur/one-slide-box": "latest",
         "npm": "^6.4.1"
     },
     "name": "mindpost",
